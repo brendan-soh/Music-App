@@ -1,2 +1,2 @@
-# Music
-## This application will provide music recommendations.
+# Backend
+# This backend API is written in Golang.
