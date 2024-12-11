@@ -21,9 +21,9 @@ class MusicRecommender:
 
         # Select relevant features for recommendation
         self.feature_columns = [
-            'danceability', 'energy', 'key', 'loudness',
-            'speechiness', 'acousticness', 'instrumentalness',
-            'liveness', 'valence', 'tempo'
+            'Danceability', 'Energy', 'Key', 'Loudness',
+            'Speechiness', 'Acousticness', 'Instrumentalness',
+            'Liveness', 'Valence', 'Tempo'
         ]
 
         # Preprocess features
