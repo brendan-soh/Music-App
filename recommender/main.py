@@ -25,6 +25,8 @@ def get_recommendations():
             "recommendations": recommendations
         }), 200
 
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -33,7 +35,10 @@ def health_check():
     """
     Health check endpoint
     """
-    return jsonify({"status": "healthy"}), 200
+    return jsonify({
+        "status": "healthy",
+        "total_songs": len(recommender.df)
+    }), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
