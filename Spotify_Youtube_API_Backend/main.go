@@ -10,7 +10,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -149,7 +149,7 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 	defer resp.Body.Close()
 
 	// Forward the repsonse from the recommener service
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
