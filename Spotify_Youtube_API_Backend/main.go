@@ -215,7 +215,7 @@ func main() {
 	router.HandleFunc("/songs", CreateSong).Methods("POST")
 	router.HandleFunc("/songs/{id}", UpdateSong).Methods("PUT")
 	router.HandleFunc("/songs/{id}", DeleteSong).Methods("DELETE")
-	router.HandleFunc("/recommendations/{id}", GetRecommendations).Methods("POST")
+	router.HandleFunc("/recommendations/{id}", GetRecommendations).Methods("GET")
 
 	// CORS configuration
 	corsOptions := handlers.AllowedOrigins([]string{"*"})                                                 // Allow all origins
