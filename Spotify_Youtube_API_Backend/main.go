@@ -6,9 +6,11 @@ package main
    dependency, it must be downloaded like follows: go get github.com/gorilla/mux */
 
 import (
+	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -129,6 +131,30 @@ func DeleteSong(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(songs)
 }
 
+func GetRecommendations(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	songID, _ := strconv.Atoi(params["id"])
+
+	// Create request to recommender service
+	reqBody, _ := json.Marshal(map[string]int{
+		"song_id":             songID,
+		"num_recommendations": 5,
+	})
+
+	resp, err := http.Post("http://recommender:5000/recommend", "application/json", bytes.NewBuffer(reqBody))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Forward the repsonse from the recommener service
+	body, _ := ioutil.ReadAll(resp.Body)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
+}
+
 /* Create a new router and add objects to the slice. Create each of the endpoints that will call our
    endpoint functions. Define that our server will run on port 8000. */
 
@@ -189,6 +215,7 @@ func main() {
 	router.HandleFunc("/songs", CreateSong).Methods("POST")
 	router.HandleFunc("/songs/{id}", UpdateSong).Methods("PUT")
 	router.HandleFunc("/songs/{id}", DeleteSong).Methods("DELETE")
+	router.HandleFunc("/recommendations/{id}", GetRecommendations).Methods("POST")
 
 	// CORS configuration
 	corsOptions := handlers.AllowedOrigins([]string{"*"})                                                 // Allow all origins
