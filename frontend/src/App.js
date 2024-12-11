@@ -6,6 +6,7 @@ function App() {
   const [newSong, setNewSong] = useState({ track: '', artist: '' });
   const [updatedSong, setUpdatedSong] = useState({ id: '', track: '', artist: '' });
   const [apiResponse, setApiResponse] = useState(null);
+  const [recommendations, setRecommendations] = useState(null);
 
   const getSongs = async () => {
     const response = await fetch('http://localhost:8000/songs');
@@ -17,6 +18,29 @@ function App() {
     const response = await fetch(`http://localhost:8000/songs/${songId}`);
     const data = await response.json();
     setApiResponse(data);
+  };
+
+  const getRecommendations = async () => {
+    try {
+      const recommendationResponse = await fetch(`http://localhost:8000/recommendations/${songId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const recommendationData = await recommendationResponse.json();
+
+      // Fetch details for recommended songs
+      const recommendedSongDetails = await Promise.all(
+        recommendationData.recommendations.map(async (recSongId) => {
+          const songResponse = await fetch(`http://localhost:8000/songs/${recSongId}`);
+          return songResponse.json();
+        })
+      );
+
+      setRecommendations(recommendedSongDetails);
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      setRecommendations(null);
+    }
   };
 
   const createSong = async () => {
@@ -66,6 +90,7 @@ function App() {
               />  
             </label>
             <button onClick={getSong}>Get Song</button>
+            <button onClick={getRecommendations}>Get Recommendations</button>
           </div>
           <div>
             <label>
@@ -116,7 +141,35 @@ function App() {
           <div>
             <button onClick={deleteSong}>Delete Song</button>
           </div>
-          <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
+
+          {/* Main API Response */}
+          <div>
+            <h3>API Response</h3>
+            <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
+          </div>
+
+          {/* Recommendations Section */}
+          {recommendations && (
+            <div>
+              <h3>Recommended Songs</h3>
+              {recommendations.map((song, index) => (
+                <div key={index} style={{
+                  border: '1px solid white',
+                  margin: '10px',
+                  padding: '10px',
+                  borderRadius: '5px'
+                }}>
+                  <p>Track: {song.track}</p>
+                  <p>Artist: {song.artist}</p>
+                  <p>Album: {song.album}</p>
+                  <details>
+                    <summary>More Details</summary>
+                    <pre>{JSON.stringify(song, null, 2)}</pre>
+                  </details>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </header>
     </div>
