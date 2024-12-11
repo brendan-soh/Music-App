@@ -43,7 +43,12 @@ class MusicRecommender:
         """
         try:
             # Find the index of the input song
-            song_index = self.df[self.df['id'] == song_id].index[0]
+            song_index = self.df[self.df['id'] == song_id].index
+
+            if len(song_index) == 0:
+                raise ValueError(f"Song ID {song_id} not found in the dataset")
+            
+            song_index = song_index[0]
 
             # Get the feature vector for the input song
             song_features = self.features[song_index]
@@ -57,14 +62,29 @@ class MusicRecommender:
             recommended_indices = [
                 idx for idx in sorted_indices[1:num_recommendations+1]
                 if idx != song_index
-            ]
+            ][:num_recommendations]
 
             # Return recommended song IDs
             recommended_songs = self.df.iloc[recommended_indices]['id'].tolist()
 
             return recommended_songs
         
-        except IndexError:
-            raise ValueError(f"Song ID {song_id} not found in the dataset")
         except Exception as e:
-            raise RuntimeError(f"Error generating recommendations: {str(e)}")
+            raise ValueError(f"Error generating recommendations: {str(e)}")
+        
+    def get_song_details(self, song_id):
+        """
+        Get details of a specific song
+        
+        Args:
+            song_id (int): ID of the song
+            
+        Returns:
+            dict: Song details or None if not found
+        """
+        song = self.df[self.df['id'] == song_id]
+
+        if len(song) == 0:
+            return None
+        
+        return song.iloc[0].to_dict()
