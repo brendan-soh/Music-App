@@ -22,7 +22,8 @@ def get_recommendations():
         recommendations = recommender.get_recommendations(song_id, num_recommendations)
 
         return jsonify({
-            "recommendations": recommendations
+            "recommendations": recommendations,
+            "similarity_method": "Cosine Distance on Audio Features"
         }), 200
 
     except ValueError as ve:
@@ -37,7 +38,11 @@ def health_check():
     """
     return jsonify({
         "status": "healthy",
-        "total_songs": len(recommender.df)
+        "features": [
+            "danceability", "energy", "key", "loudness",
+            "speechiness", "acousticness", "insrumentalness",
+            "liveness", "valence", "tempo"
+        ]
     }), 200
 
 if __name__ == '__main__':
