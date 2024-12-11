@@ -148,7 +148,7 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	// Forward the repsonse from the recommener service
+	// Forward the repsonse from the recommender service
 	body, _ := io.ReadAll(resp.Body)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
