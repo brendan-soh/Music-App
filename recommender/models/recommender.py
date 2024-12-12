@@ -43,7 +43,7 @@ class MusicRecommender:
         """
         try:
             # Find the index of the input song
-            song_index = self.df[self.df['id'] == song_id].index[0]
+            song_index = self.df[self.df['ID'] == song_id].index[0]
 
             # Get the feature vector for the input song
             song_features = self.features[song_index]
