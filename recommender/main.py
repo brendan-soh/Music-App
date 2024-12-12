@@ -5,15 +5,29 @@ from models.recommender import MusicRecommender
 app = Flask(__name__)
 recommender = MusicRecommender()
 
-@app.route('/recommend', methods=['POST'])
+@app.route('/', methods=['GET'])
+def index():
+    """
+    Root route to provide service information
+    """
+    return jsonify({
+        "service": "Music Recommender",
+        "status": "running",
+        "available_endpoints": {
+            "/recommend": "GET - Get song recommendations",
+            "/health": "GET - Check service health"
+        }
+    }), 200
+
+@app.route('/recommend', methods=['GET'])
 def get_recommendations():
     """
     Endpoint to get music recommendations based on input song
     """
     try:
-        data = request.get_json()
-        song_id = data.get('song_id')
-        num_recommendations = data.get('num_recommendations', 5)
+        # Use query parameters instead of JSON body
+        song_id = request.args.get('song_id', type=int)
+        num_recommendations = request.args.get('num_recommendations', default=5, type=int)
 
         if not song_id:
             return jsonify({"error": "Song ID is required"}), 400
@@ -36,4 +50,4 @@ def health_check():
     return jsonify({"status": "healthy"}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)

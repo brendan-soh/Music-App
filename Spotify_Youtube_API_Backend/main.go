@@ -6,7 +6,6 @@ package main
    dependency, it must be downloaded like follows: go get github.com/gorilla/mux */
 
 import (
-	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -139,54 +138,38 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create request to recommender service
-	reqBody, err := json.Marshal(map[string]int{
-		"song_id":             songID,
-		"num_recommendations": 5,
-	})
+	// Create request to recommender service with GET method
+	req, err := http.NewRequest("GET", "http://recommender:5000/recommend", nil)
 	if err != nil {
 		http.Error(w, "Error creating request", http.StatusInternalServerError)
 		return
 	}
 
-	resp, err := http.Post("http://localhost:5000/recommend", "application/json", bytes.NewBuffer(reqBody))
+	// Add query parameters
+	query := req.URL.Query()
+	query.Add("song_id", strconv.Itoa(songID))
+	query.Add("num_recommendations", "5")
+	req.URL.RawQuery = query.Encode()
+
+	// Send request
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		http.Error(w, "Error communicating with recommender service", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	// Read the repsonse from the recommender service
+	// Forward the response from the recommender service
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		http.Error(w, "Error reading response", http.StatusInternalServerError)
 		return
 	}
 
-	// Parse the response
-	var recommendationResponse struct {
-		RecommendedTracks []string `json:"recommended_tracks"`
-	}
-	err = json.Unmarshal(body, &recommendationResponse)
-	if err != nil {
-		http.Error(w, "Error parsing recommender response", http.StatusInternalServerError)
-		return
-	}
-
-	// Find recommended songs by track name
-	var recommendedSongs []Song
-	for _, trackName := range recommendationResponse.RecommendedTracks {
-		for _, song := range songs {
-			if song.Track == trackName {
-				recommendedSongs = append(recommendedSongs, song)
-				break
-			}
-		}
-	}
-
-	// Send the response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(recommendedSongs)
+	w.WriteHeader(resp.StatusCode)
+	w.Write(body)
 }
 
 /* Create a new router and add objects to the slice. Create each of the endpoints that will call our

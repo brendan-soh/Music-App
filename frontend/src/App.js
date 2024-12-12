@@ -7,6 +7,7 @@ function App() {
   const [updatedSong, setUpdatedSong] = useState({ id: '', track: '', artist: '' });
   const [apiResponse, setApiResponse] = useState(null);
   const [recommendations, setRecommendations] = useState(null);
+  const [error, setError] = useState(null);
 
   const getSongs = async () => {
     const response = await fetch('http://localhost:8000/songs');
@@ -22,6 +23,10 @@ function App() {
 
   const getRecommendations = async () => {
     try {
+      // Reset previous error and recommendations
+      setError(null);
+      setRecommendations(null);
+
       // First, verify the input song exists
       const songCheckResponse = await fetch(`http://localhost:8000/songs/${songId}`);
       const songCheckData = await songCheckResponse.json();
@@ -32,15 +37,22 @@ function App() {
       }
 
       // Get recommendations
-      const recommendationResponse = await fetch(`http://localhost:8000/recommendations/${songId}`);
-      const recommendationData = await recommendationResponse.json()
+      const recommendationResponse = await fetch(`http://localhost:8000/recommendations/${songId}?num_recommendations=5`);
 
-      // Set the recommendations directly
-      setRecommendations(recommendationData);
+      if (!recommendationResponse.ok) {
+        throw new Error('Failed to fetch recommendations');
+      }
+
+      const recommendationData = await recommendationResponse.json();
+
+      // Check if the response has the expected structure
+      const recommendations = recommendationData.recommended_tracks || recommendationData;
+
+      // Set the recommendations
+      setRecommendations(recommendations);
     } catch (error) {
       console.error('Error fetching recommendations:', error);
-      setRecommendations(null);
-      alert('Failed to fetch recommendations');
+      setError(error.message || 'Failed to fetch recommendations');
     }
   };
 
@@ -149,6 +161,19 @@ function App() {
             <pre>{JSON.stringify(apiResponse, null, 2)}</pre>
           </div>
 
+          {/* Error Handling*/}
+          {error && (
+            <div style={{
+              color: 'red',
+              backgroundColor: 'rgba(255,0,0,0.1)',
+              padding: '10px',
+              margin: '10px 0',
+              borderRadius: '5px'
+            }}>
+              {error}
+            </div>
+          )}
+
           {/* Recommendations Section */}
           {recommendations && recommendations.length > 0 && (
             <div>
@@ -160,9 +185,9 @@ function App() {
                   padding: '10px',
                   borderRadius: '5px'
                 }}>
-                  <p>Track: {song.track}</p>
-                  <p>Artist: {song.artist}</p>
-                  <p>Album: {song.album}</p>
+                  <p>Track: {song.track || song.Track}</p>
+                  <p>Artist: {song.artist || song.Artist}</p>
+                  <p>Album: {song.album || song.Album}</p>
                   <details>
                     <summary>More Details</summary>
                     <pre>{JSON.stringify(song, null, 2)}</pre>
