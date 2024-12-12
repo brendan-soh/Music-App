@@ -139,7 +139,7 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create request to recommender service with GET method
-	req, err := http.NewRequest("GET", "http://recommender:5000/recommend", nil)
+	req, err := http.NewRequest("GET", "http://localhost:5000/recommend", nil)
 	if err != nil {
 		http.Error(w, "Error creating request", http.StatusInternalServerError)
 		return
