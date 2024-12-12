@@ -133,23 +133,36 @@ func DeleteSong(w http.ResponseWriter, r *http.Request) {
 
 func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	songID, _ := strconv.Atoi(params["id"])
+	songID, err := strconv.Atoi(params["id"])
+	if err != nil {
+		http.Error(w, "Invalid song ID", http.StatusBadRequest)
+		return
+	}
 
 	// Create request to recommender service
-	reqBody, _ := json.Marshal(map[string]int{
+	reqBody, err := json.Marshal(map[string]int{
 		"song_id":             songID,
 		"num_recommendations": 5,
 	})
+	if err != nil {
+		http.Error(w, "Error creating request", http.StatusInternalServerError)
+		return
+	}
 
 	resp, err := http.Post("http://recommender:5000/recommend", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Error communicating with recommender service", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	// Forward the repsonse from the recommender service
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Error reading response", http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	w.Write(body)
