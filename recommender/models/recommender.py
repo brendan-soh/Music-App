@@ -43,12 +43,7 @@ class MusicRecommender:
         """
         try:
             # Find the index of the input song
-            song_indices = self.df[self.df['id'] == song_id].index
-
-            if len(song_indices) == 0:
-                raise ValueError(f"Song ID {song_id} not found in the dataset")
-            
-            song_index = song_indices[0]
+            song_index = self.df[self.df['id'] == song_id].index[0]
 
             # Get the feature vector for the input song
             song_features = self.features[song_index]
@@ -57,36 +52,19 @@ class MusicRecommender:
             distances = [cosine(song_features, other_features)
                          for other_features in self.features]
             
-            # Sort indices based on distances (lower distance means more similar)
+            # Sort distances and get top recommendations (excluding the input song)
             sorted_indices = np.argsort(distances)
-
-            # Get recommended indices, excluding the original song
             recommended_indices = [
-                idx for idx in sorted_indices[1:]
+                idx for idx in sorted_indices[1:num_recommendations+1]
                 if idx != song_index
-            ][:num_recommendations]
+            ]
 
-            # Return recommended song IDs
-            recommended_songs = self.df.iloc[recommended_indices]['id'].tolist()
+            # Return recommended song tracks
+            recommended_songs = self.df.iloc[recommended_indices]['Track'].tolist()
 
             return recommended_songs
         
+        except IndexError:
+            raise ValueError(f"Song ID {song_id} not found in the dataset")
         except Exception as e:
             raise RuntimeError(f"Error generating recommendations: {str(e)}")
-        
-    def get_song_features(self, song_id):
-        """
-        Get feature details for a specific song
-        
-        Args:
-            song_id (int): ID of the song
-            
-        Returns:
-            dict: Dictionary of song features
-        """
-        song = self.df[self.df['id'] == song_id]
-
-        if len(song) == 0:
-            raise ValueError(f"Song ID {song_id} not found in the dataset")
-        
-        return song[self.feature_columns + ['track', 'artist']].to_dict('records')[0]
