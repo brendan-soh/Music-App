@@ -149,23 +149,44 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := http.Post("http://recommender:5000/recommend", "application/json", bytes.NewBuffer(reqBody))
+	resp, err := http.Post("http://localhost:5000/recommend", "application/json", bytes.NewBuffer(reqBody))
 	if err != nil {
 		http.Error(w, "Error communicating with recommender service", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	// Forward the repsonse from the recommender service
+	// Read the repsonse from the recommender service
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		http.Error(w, "Error reading response", http.StatusInternalServerError)
 		return
 	}
 
+	// Parse the response
+	var recommendationResponse struct {
+		RecommendedTracks []string `json:"recommended_tracks"`
+	}
+	err = json.Unmarshal(body, &recommendationResponse)
+	if err != nil {
+		http.Error(w, "Error parsing recommender response", http.StatusInternalServerError)
+		return
+	}
+
+	// Find recommended songs by track name
+	var recommendedSongs []Song
+	for _, trackName := range recommendationResponse.RecommendedTracks {
+		for _, song := range songs {
+			if song.Track == trackName {
+				recommendedSongs = append(recommendedSongs, song)
+				break
+			}
+		}
+	}
+
+	// Send the response
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	json.NewEncoder(w).Encode(recommendedSongs)
 }
 
 /* Create a new router and add objects to the slice. Create each of the endpoints that will call our
