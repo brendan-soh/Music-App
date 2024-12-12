@@ -22,24 +22,38 @@ function App() {
 
   const getRecommendations = async () => {
     try {
-      const recommendationResponse = await fetch(`http://localhost:8000/recommendations/${songId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const recommendationData = await recommendationResponse.json();
+      // First, verify the input song exists
+      const songCheckResponse = await fetch(`http://localhost:8000/songs/${songId}`);
+      const songCheckData = await songCheckResponse.json();
 
-      // Fetch details for recommended songs
-      const recommendedSongDetails = await Promise.all(
-        recommendationData.recommendations.map(async (recSongId) => {
-          const songResponse = await fetch(`http://localhost:8000/songs/${recSongId}`);
-          return songResponse.json();
-        })
-      );
+      if (!songCheckData.id) {
+        alert('Invalid Song ID');
+        return;
+      }
 
-      setRecommendations(recommendedSongDetails);
+      // Get recommendations
+      const recommendationResponse = await fetch(`http://localhost:8000/recommendations/${songId}`);
+      const recommendationData = await recommendationResponse.json()
+
+      // Find recommended songs by track name
+      if (recommendationData.recommended_tracks) {
+        const recommendedSongDetails = await Promise.all(
+          recommendationData.recommended_tracks.map(async (trackName) => {
+            // Find song by track name
+            const songsResponse = await fetch('http//localhost:8000/songs');
+            const allSongs = await songsResponse.json();
+            return allSongs.find(song => song.track === trackName);
+          })
+        );
+
+        // Filter out any undefined results
+        const validRecommendations = recommendedSongDetails.filter(song => song);
+        setRecommendations(validRecommendations);
+      }
     } catch (error) {
       console.error('Error fetching recommendations:', error);
       setRecommendations(null);
+      alert('Failed to fetch recommendations');
     }
   };
 
@@ -149,7 +163,7 @@ function App() {
           </div>
 
           {/* Recommendations Section */}
-          {recommendations && (
+          {recommendations && recommendations.length > 0 && (
             <div>
               <h3>Recommended Songs</h3>
               {recommendations.map((song, index) => (
@@ -168,6 +182,12 @@ function App() {
                   </details>
                 </div>
               ))}
+            </div>
+          )}
+
+          {recommendations && recommendations.length === 0 && (
+            <div>
+              <p>No recommendations found.</p>
             </div>
           )}
         </div>
