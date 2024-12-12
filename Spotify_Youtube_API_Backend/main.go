@@ -131,6 +131,7 @@ func DeleteSong(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetRecommendations(w http.ResponseWriter, r *http.Request) {
+	// Get song ID from path parameter
 	params := mux.Vars(r)
 	songID, err := strconv.Atoi(params["id"])
 	if err != nil {
@@ -138,38 +139,32 @@ func GetRecommendations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create request to recommender service with GET method
-	req, err := http.NewRequest("GET", "http://localhost:5000/recommend", nil)
-	if err != nil {
-		http.Error(w, "Error creating request", http.StatusInternalServerError)
-		return
+	// Get num_recommendations from query parameter, default to 5 if not provided
+	numRecs := r.URL.Query().Get("num_recommendations")
+	if numRecs == "" {
+		numRecs = "5"
 	}
 
-	// Add query parameters
-	query := req.URL.Query()
-	query.Add("song_id", strconv.Itoa(songID))
-	query.Add("num_recommendations", "5")
-	req.URL.RawQuery = query.Encode()
+	// Create request to recommender service
+	recommenderURL := fmt.Sprintf("http://localhost:5000/recommend?song_id=%d&num_recommendations=%s",
+		songID, numRecs)
 
-	// Send request
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := http.Get(recommenderURL)
 	if err != nil {
-		http.Error(w, "Error communicating with recommender service", http.StatusInternalServerError)
+		http.Error(w, "Error communicating with recommender service: "+err.Error(),
+			http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
-	// Forward the response from the recommender service
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		http.Error(w, "Error reading response", http.StatusInternalServerError)
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, "Recommender service returned error", resp.StatusCode)
 		return
 	}
 
+	// Forward the response
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
+	io.Copy(w, resp.Body)
 }
 
 /* Create a new router and add objects to the slice. Create each of the endpoints that will call our
