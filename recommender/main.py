@@ -1,4 +1,5 @@
 import os
+import traceback
 from flask import Flask, request, jsonify
 from models.recommender import MusicRecommender
 
@@ -40,7 +41,13 @@ def get_recommendations():
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        # Get the full stack trace
+        error_trace = traceback.format_exc()
+        app.logger.error(f"Error in get_recommendations: {str(e)}\n{error_trace}")
+        return jsonify({
+            "error": str(e),
+            "trace": error_trace if app.debug else "Enable debug mode for detailed error information"
+        }), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
