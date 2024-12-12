@@ -35,21 +35,8 @@ function App() {
       const recommendationResponse = await fetch(`http://localhost:8000/recommendations/${songId}`);
       const recommendationData = await recommendationResponse.json()
 
-      // Find recommended songs by track name
-      if (recommendationData.recommended_tracks) {
-        const recommendedSongDetails = await Promise.all(
-          recommendationData.recommended_tracks.map(async (trackName) => {
-            // Find song by track name
-            const songsResponse = await fetch('http//localhost:8000/songs');
-            const allSongs = await songsResponse.json();
-            return allSongs.find(song => song.track === trackName);
-          })
-        );
-
-        // Filter out any undefined results
-        const validRecommendations = recommendedSongDetails.filter(song => song);
-        setRecommendations(validRecommendations);
-      }
+      // Set the recommendations directly
+      setRecommendations(recommendationData);
     } catch (error) {
       console.error('Error fetching recommendations:', error);
       setRecommendations(null);
